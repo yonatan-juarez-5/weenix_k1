@@ -103,32 +103,8 @@ kthread_destroy(kthread_t *t)
 kthread_t *
 kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 {
-        KASSERT(NULL != p);
-        dbg(DBG_PRINT, "(GRADING1A 3.a)\n");
-
-        // initialize kthread object parameters
-        kthread_t *kthr = (kthread_t*)slab_obj_alloc(kthread_allocator);
-        kthr->kt_kstack = alloc_stack();
-        kthr->kt_retval = (void*)0;
-        kthr->kt_errno = 0;
-        kthr->kt_proc = p;
-
-        kthr->kt_cancelled = 0;
-        kthr->kt_wchan = NULL;
-        kthr->kt_state = KT_RUN;
-
-        list_link_init(&kthr->kt_qlink); //initialize link on ktqueue
-        list_link_init(&kthr->kt_plink); // initialize link on proc thread
-
-        // context_setup(
-        //              context_t *c, context_func_t func, int arg1, void *arg2,
-           // void *kstack, size_t kstacksz, pagedir_t *pdptr);
-        context_setup(&kthr->kt_ctx, func, arg1, arg2, 
-                kthr->kt_kstack, DEFAULT_STACK_SIZE, p->p_pagedir);
-        dbg(DBG_PRINT, "(GRADING1A 3)\n");
-        // NOT_YET_IMPLEMENTED("PROCS: kthread_create");
-        return kthr;
-        // return NULL;
+        NOT_YET_IMPLEMENTED("PROCS: kthread_create");
+        return NULL;
 }
 
 /*
@@ -148,21 +124,7 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 void
 kthread_cancel(kthread_t *kthr, void *retval)
 {
-        KASSERT(NULL != kthr);
-        dbg(DBG_PRINT, "(GRADING1A 3.b)\n");
-        dbg(DBG_PRINT, "(GRADING1C)\n");
-
-        kthr->kt_cancelled = 1;
-        if (kthr == curthr){
-                dbg(DBG_PRINT, "(GRADING1A 3)\n");
-                kthread_exit(retval);
-        }
-        else{
-                kthr->kt_retval = retval;
-                sched_cancel(kthr);
-                dbg(DBG_PRINT, "(GRADING1A 3)\n");
-        }
-        // NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");
+        NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");
 }
 
 /*
@@ -183,23 +145,7 @@ kthread_cancel(kthread_t *kthr, void *retval)
 void
 kthread_exit(void *retval)
 {
-
-        KASSERT(!curthr->kt_wchan);
-        dbg(DBG_PRINT, "(GRADING1A 3.c)");
-
-        KASSERT(!curthr->kt_qlink.l_next && !curthr->kt_qlink.l_prev);
-        dbg(DBG_PRINT, "(GRADING1A 3.c)");
-
-        KASSERT(curthr->kt_proc == curproc);
-        dbg(DBG_PRINT, "(GRADING1A 3.c)");
-
-        curthr->kt_retval = retval;
-        curthr->kt_state = KT_EXITED;
-        dbg(DBG_PRINT, "(GRADING1A 3)");
-        proc_thread_exited(retval);
-        // proc_thread_exited(curthr->kt_retval);
-
-        // NOT_YET_IMPLEMENTED("PROCS: kthread_exit");
+        NOT_YET_IMPLEMENTED("PROCS: kthread_exit");
 }
 
 /*

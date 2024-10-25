@@ -103,8 +103,30 @@ kthread_destroy(kthread_t *t)
 kthread_t *
 kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 {
-        NOT_YET_IMPLEMENTED("PROCS: kthread_create");
-        return NULL;
+         /* the p argument of this function must be a valid process */
+        KASSERT(NULL != p);
+        dbg(DBG_PRINT, "(GRADING1A 3.a)\n");
+
+        kthread_t *kthr = (kthread_t*)slab_obj_alloc(kthread_allocator);
+        kthr->kt_kstack = alloc_stack();
+        kthr->kt_retval = (void*)0;
+        kthr->kt_errno = 0;
+        kthr->kt_proc = p;
+
+        kthr->kt_cancelled = 0;
+        kthr->kt_wchan = NULL;
+        kthr->kt_state = KT_RUN;
+
+        list_link_init(&kthr->kt_qlink);
+        list_link_init(&kthr->kt_plink);
+        list_insert_tail(&p->p_threads, &kthr->kt_plink);
+        context_setup(&kthr->kt_ctx, func, arg1, arg2, 
+                &kthr->kt_kstack, DEFAULT_STACK_SIZE, p->p_pagedir);
+        
+        dbg(DBG_PRINT, "(GRADING1A 3)\n");
+
+        // NOT_YET_IMPLEMENTED("PROCS: kthread_create");
+        return kthr;
 }
 
 /*
@@ -124,7 +146,25 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 void
 kthread_cancel(kthread_t *kthr, void *retval)
 {
-        NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");
+        /* please use TWO consecutive "conforming dbg() calls" for this 
+        since this function is not called if you just start and stop weenix */
+        /* the kthr argument of this function must be a valid thread */
+        KASSERT(NULL != kthr); 
+        dbg(DBG_PRINT, "(GRADING1A 3.b)\n");
+        dbg(DBG_PRINT, "(GRADING1C)\n");
+
+        if (curthr == kthr){
+                kthr->kt_cancelled = 1;
+                kthread_exit(retval);
+                dbg(DBG_PRINT, "(GRADING1A 3)\n");
+        }
+        else{
+                kthr->kt_cancelled = 1;
+                kthr->kt_retval = retval;
+                sched_cancel(kthr);
+                dbg(DBG_PRINT, "(GRADING1A 3)\n");
+        }
+        // NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");
 }
 
 /*
@@ -145,7 +185,20 @@ kthread_cancel(kthread_t *kthr, void *retval)
 void
 kthread_exit(void *retval)
 {
-        NOT_YET_IMPLEMENTED("PROCS: kthread_exit");
+        /* curthr should not be (sleeping) in any queue */
+        KASSERT(!curthr->kt_wchan); 
+        /* this thread must not be part of any list */
+        KASSERT(!curthr->kt_qlink.l_next && !curthr->kt_qlink.l_prev); 
+        /* this thread belongs to curproc */
+        KASSERT(curthr->kt_proc == curproc); 
+        dbg(DBG_PRINT, "(GRADING1A 3.c)\n");
+
+        curthr->kt_retval = retval;
+        curthr->kt_state = KT_EXITED;
+        proc_thread_exited(retval);
+        dbg(DBG_PRINT, "(GRADING1A 3)\n");
+
+        // NOT_YET_IMPLEMENTED("PROCS: kthread_exit");
 }
 
 /*

@@ -66,6 +66,14 @@ sched_wakeup_on(ktqueue_t *q)
 void
 sched_broadcast_on(ktqueue_t *q)
 {
-        NOT_YET_IMPLEMENTED("PROCS: sched_broadcast_on");
+		dbg(DBG_PRINT, "(GRADING1A 4)\n");
+		kthread_t *tempKthr = NULL;
+		// iterate over queue and schedule
+		while(!sched_queue_empty(q)){
+			tempKthr = ktqueue_dequeue(q);
+			sched_make_runnable(tempKthr);
+			dbg(DBG_PRINT, "(GRADING1A 4)\n");
+		}
+        // NOT_YET_IMPLEMENTED("PROCS: sched_broadcast_on");
 }
 

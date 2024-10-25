@@ -58,7 +58,6 @@ kmutex_lock(kmutex_t *mtx)
 			sched_sleep_on(&mtx->km_waitq);
 			dbg(DBG_PRINT, "(GRADING1A 6)\n");
 		}
-
         // NOT_YET_IMPLEMENTED("PROCS: kmutex_lock");
 }
 
@@ -69,7 +68,23 @@ kmutex_lock(kmutex_t *mtx)
 int
 kmutex_lock_cancellable(kmutex_t *mtx)
 {
-        NOT_YET_IMPLEMENTED("PROCS: kmutex_lock_cancellable");
+        /* please use TWO consecutive "conforming dbg() calls" for this since this function is not called if you just start and stop weenix */
+    	KASSERT(curthr && (curthr != mtx->km_holder)); /* curthr must be valid and it must not be holding the mutex (mtx) already */
+		dbg(DBG_PRINT, "(GRADING1A 6.b)\n");
+		dbg(DBG_PRINT, "(GRADING1C)\n");
+
+		if (mtx->km_holder == NULL){
+			mtx->km_holder = curthr;
+			dbg(DBG_PRINT, "(GRADING1A 6)\n");
+		}else{
+			if (mtx->km_holder->kt_cancelled == 1){
+				kmutex_unlock(mtx);
+				dbg(DBG_PRINT, "(GRADING1A 6)\n");
+			}
+			dbg(DBG_PRINT, "(GRADING1A 6)\n");
+			return sched_cancellable_sleep_on(&mtx->km_waitq); //return status 
+		}
+		// NOT_YET_IMPLEMENTED("PROCS: kmutex_lock_cancellable");
         return 0;
 }
 

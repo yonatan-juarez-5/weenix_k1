@@ -220,10 +220,46 @@ failed:
 proc_t *
 proc_create(char *name)
 {
-        // (middle) KASSERT(PID_IDLE != pid || list_empty(&_proc_list)); /* pid can only be PID_IDLE if this is the first process */
-        // (middle) KASSERT(PID_INIT != pid || PID_IDLE == curproc->p_pid); /* pid can only be PID_INIT if the running process is the "idle" process */
+         /* pid is the process ID of the process that will be created in this function */
+        proc_t *p = (proc_t*)slab_obj_alloc(proc_allocator);
+        p->p_pid = _proc_getid();
+        /* pid can only be PID_IDLE if this is the first process */
+        KASSERT(PID_IDLE != p->p_pid || list_empty(&_proc_list)); 
+        /* pid can only be PID_INIT if the running process is the "idle" process */
+        KASSERT(PID_INIT != p->p_pid || PID_IDLE == curproc->p_pid); 
+        dbg(DBG_PRINT, "(GRADING1A 2.a)\n");
+
+        strncpy(p->p_comm, name, PROC_NAME_LEN);
+
+        list_init(&p->p_threads);
+        list_init(&p->p_children);
+
+        p->p_pproc = curproc;
+        if (p->p_pid == PID_INIT){
+                proc_initproc = p;
+                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+        }
+
+        p->p_status = 0;
+        p->p_state = PROC_RUNNING;
+
+        sched_queue_init(&p->p_wait);
+        p->p_pagedir = pt_create_pagedir();
+
+        list_link_init(&p->p_list_link);
+        list_link_init(&p->p_child_link);
+
+        if (curproc!= NULL){
+                list_insert_tail(&curproc->p_children, &p->p_child_link);
+                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+        }
+        
+        list_insert_tail(&(_proc_list), &p->p_list_link);
+        dbg(DBG_PRINT, "(GRADING1A 2)\n");
+
+
         // NOT_YET_IMPLEMENTED("PROCS: proc_create");
-        return NULL;
+        return p;
 }
 
 /**
@@ -253,12 +289,33 @@ proc_create(char *name)
 void
 proc_cleanup(int status)
 {
-        // (precondition) KASSERT(NULL != proc_initproc); /* "init" process must exist and proc_initproc initialized */
-        // (precondition) KASSERT(1 <= curproc->p_pid); /* this process must not be "idle" process */
-        // (precondition) KASSERT(NULL != curproc->p_pproc); /* this process must have a parent when this function is entered */
+        /* "init" process must exist and proc_initproc initialized */
+        KASSERT(NULL != proc_initproc); 
+        /* this process must not be "idle" process */
+        KASSERT(1 <= curproc->p_pid); 
+        /* this process must have a parent when this function is entered */
+        KASSERT(NULL != curproc->p_pproc); 
+        dbg(DBG_PRINT, "(GRADING1A 2.a)\n");
+
+        // schedule wake up on current queue waiting
+        sched_wakeup_on(&curproc->p_pproc->p_wait);
+
+        proc_t* temp_p;
+        list_iterate_begin(&curproc->p_children, temp_p, proc_t, p_child_link){
+                list_insert_tail(&(proc_initproc->p_children), &temp_p->p_child_link);
+                temp_p->p_pproc = proc_initproc;
+                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+        } list_iterate_end();
         
-        // (postcondition) KASSERT(NULL != curproc->p_pproc); /* this process must still have a parent when this function returns */
-        // (postcondition) KASSERT(KT_EXITED == curthr->kt_state); /* the thread in this process should be in the KT_EXITED state when this function returns */
+        // update status and state
+        curproc->p_status = status;
+        curproc->p_state = PROC_DEAD;
+
+        /* this process must still have a parent when this function returns */
+        KASSERT(NULL != curproc->p_pproc); 
+        /* the thread in this process should be in the KT_EXITED state when this function returns */
+        KASSERT(KT_EXITED == curthr->kt_state); 
+        dbg(DBG_PRINT, "(GRADING1A 2.b)\n");
 
         // NOT_YET_IMPLEMENTED("PROCS: proc_cleanup");
 }
@@ -339,8 +396,105 @@ proc_thread_exited(void *retval)
 pid_t
 do_waitpid(pid_t pid, int options, int *status)
 {
-        NOT_YET_IMPLEMENTED("PROCS: do_waitpid");
-        return 0;
+        /* p is a dead child process when this function is about to return */
+
+        if (list_empty(&curproc->p_children)){
+                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                return -ECHILD; /* No child processes */
+        }
+        
+        if (pid == -1){
+                while (1){
+                        proc_t *p;
+                        pid_t pid;
+                        list_iterate_begin(&curproc->p_children, p, proc_t, p_child_link){
+                                if (p->p_state == PROC_DEAD){
+                                        /* must have found a dead child process */
+                                        KASSERT(NULL != p); 
+                                        dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
+
+                                        /* if the pid argument is not -1, then pid must be the process ID of the found dead child process */
+                                        KASSERT(-1 == pid || p->p_pid == pid); 
+                                        dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
+
+                                        /* this process should have a valid pagedir before you destroy it */
+                                        KASSERT(NULL != p->p_pagedir); 
+                                        dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
+
+                                        *status = p->p_status;
+                                        pid = p->p_pid;
+
+                                        if (list_link_is_linked(&p->p_list_link)){
+                                                list_remove(&p->p_list_link);
+                                                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                                        }
+                                        if (list_link_is_linked(&p->p_child_link)){
+                                                list_remove(&p->p_child_link);
+                                                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                                        }       
+
+                                        kthread_t *kthr = list_head(&p->p_threads, kthread_t, kt_plink);
+                                        kthread_destroy(kthr);
+                                        pt_destroy_pagedir(p->p_pagedir);
+
+                                        slab_obj_free(proc_allocator, p);
+                                        dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                                        return pid;
+                                }
+                                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                        } list_iterate_end();
+                }
+        }
+        else if (pid > 0){
+                proc_t *p;
+                pid_t pid;
+                list_iterate_begin(&curproc->p_children, p, proc_t, p_child_link){
+
+                        if (p->p_pid == pid){
+                                 /* must have found a dead child process */
+                                KASSERT(NULL != p); 
+                                dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
+
+                                /* if the pid argument is not -1, then pid must be the process ID of the found dead child process */
+                                KASSERT(-1 == pid || p->p_pid == pid); 
+                                dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
+
+                                /* this process should have a valid pagedir before you destroy it */
+                                KASSERT(NULL != p->p_pagedir); 
+                                dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
+                
+                                *status = p->p_status;
+                                pid = p->p_pid;
+
+                                while(p->p_state != PROC_DEAD){
+                                        sched_sleep_on(&curproc->p_wait);
+                                        dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                                }
+
+                                if (list_link_is_linked(&p->p_list_link)){
+                                        list_remove(&p->p_list_link);
+                                        dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                                }
+                                if (list_link_is_linked(&p->p_child_link)){
+                                        list_remove(&p->p_child_link);
+                                        dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                                }
+
+                                kthread_t *kthr = list_head(&p->p_threads, kthread_t, kt_plink);
+                                kthread_destroy(kthr);
+                                pt_destroy_pagedir(p->p_pagedir);
+
+                                slab_obj_free(proc_allocator, p);
+                                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                                return pid;
+                        }
+                        dbg(DBG_PRINT, "(GRADING1A 2)\n");
+
+                } list_iterate_end();
+        }
+        // NOT_YET_IMPLEMENTED("PROCS: do_waitpid");
+        dbg(DBG_PRINT, "(GRADING1A 2)\n");
+        return -ECHILD; /* No child processes */
 }
 
 /*

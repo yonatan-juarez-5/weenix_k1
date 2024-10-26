@@ -356,7 +356,22 @@ proc_kill(proc_t *p, int status)
 void
 proc_kill_all()
 {
-        NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
+        proc_t *p;
+        list_iterate_begin(&_proc_list, p, proc_t, p_list_link){
+                if (p->p_pproc != NULL && p->p_pproc->p_pid != PID_IDLE && 
+                        p->p_pid != PID_IDLE && p != curproc){
+                                proc_kill(p,0);
+                                dbg(DBG_PRINT, "(GRADING1A)\n");
+                }
+                dbg(DBG_PRINT, "(GRADING1A)\n");
+        } list_iterate_end();
+        dbg(DBG_PRINT, "(GRADING1A)\n");
+
+        if (curproc->p_pproc != NULL && curproc->p_pproc->p_pid != PID_IDLE){
+                proc_kill(curproc, 0);
+        }
+        dbg(DBG_PRINT, "(GRADING1A)\n");
+        // NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
 }
 
 /*

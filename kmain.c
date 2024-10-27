@@ -93,7 +93,7 @@ bootstrap(int arg1, void *arg2)
         /* necessary to finalize page table information */
         pt_template_init();
 
-        curproc = proc_create("idle");
+        curproc = proc_create("IDLE");
         KASSERT(NULL != curproc);
         dbg(DBG_PRINT, "(GRADING1A 1.a)\n");
 
@@ -106,7 +106,7 @@ bootstrap(int arg1, void *arg2)
         dbg(DBG_PRINT, "(GRADING1A 1.a)\n");
         
         // NOT_YET_IMPLEMENTED("PROCS: bootstrap");
-        
+        context_make_active(&curthr->kt_ctx);
 
         panic("weenix returned to bootstrap()!!! BAD!!!\n");
         return NULL;
@@ -176,13 +176,16 @@ initproc_create(void)
 {
         // NOT_YET_IMPLEMENTED("PROCS: initproc_create");
         proc_t *p = proc_create("INIT");
-        kthread_t *kthr = kthread_create(p, initproc_run, NULL, NULL);
+        // kthread_t *kthr = kthread_create(p, initproc_run, NULL, NULL);
 
         KASSERT(NULL != p);
         dbg(DBG_PRINT, "(GRADING1A 1.b)\n");
         KASSERT(PID_INIT == p->p_pid);
         dbg(DBG_PRINT, "(GRADING1A 1.b)\n");
-        KASSERT(NULL != curthr);
+        
+        kthread_t *kthr = kthread_create(p, initproc_run, NULL, NULL);
+
+        KASSERT(NULL != kthr);
         dbg(DBG_PRINT, "(GRADING1A 1.b)\n");
 
         return kthr;
@@ -203,7 +206,7 @@ initproc_create(void)
 void *
 initproc_run(int arg1, void *arg2)
 {
-        NOT_YET_IMPLEMENTED("PROCS: initproc_run");
+        // NOT_YET_IMPLEMENTED("PROCS: initproc_run");
 
-        return NULL;
+        // return NULL;
 }

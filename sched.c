@@ -118,7 +118,7 @@ sched_queue_empty(ktqueue_t *q)
 int
 sched_cancellable_sleep_on(ktqueue_t *q)
 {
-        if (curthr->kt_cancelled){
+        if (curthr->kt_cancelled == 1){
                 dbg(DBG_PRINT, "(GRADING1A 5)\n");
                 return -EINTR; /* Interrupted system call */
         }
@@ -127,7 +127,7 @@ sched_cancellable_sleep_on(ktqueue_t *q)
         dbg(DBG_PRINT, "(GRADING1A 5)\n");
 
         sched_switch();
-        if (curthr->kt_cancelled){
+        if (curthr->kt_cancelled == 1){
                 dbg(DBG_PRINT, "(GRADING1A 5)\n");
                 return -EINTR; /* Interrupted system call */
         }
@@ -215,6 +215,7 @@ sched_switch(void)
                 dbg(DBG_PRINT, "(GRADING1A 5)\n");
 
         }while(isQEmpty);
+        
         intr_setipl(IPL_HIGH);
         kthread_t *kthr = ktqueue_dequeue(&kt_runq);
         context_t *currCtx = &curthr->kt_ctx;

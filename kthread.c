@@ -120,8 +120,9 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
         list_link_init(&kthr->kt_qlink);
         list_link_init(&kthr->kt_plink);
         list_insert_tail(&p->p_threads, &kthr->kt_plink);
+
         context_setup(&kthr->kt_ctx, func, arg1, arg2, 
-                &kthr->kt_kstack, DEFAULT_STACK_SIZE, p->p_pagedir);
+                kthr->kt_kstack, DEFAULT_STACK_SIZE, p->p_pagedir);
         
         dbg(DBG_PRINT, "(GRADING1A 3)\n");
 
@@ -153,8 +154,9 @@ kthread_cancel(kthread_t *kthr, void *retval)
         dbg(DBG_PRINT, "(GRADING1A 3.b)\n");
         dbg(DBG_PRINT, "(GRADING1C)\n");
 
+        // kthr->kt_cancelled = 1;
         if (curthr == kthr){
-                kthr->kt_cancelled = 1;
+                
                 kthread_exit(retval);
                 dbg(DBG_PRINT, "(GRADING1A 3)\n");
         }

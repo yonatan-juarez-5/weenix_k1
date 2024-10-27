@@ -230,15 +230,15 @@ proc_create(char *name)
         dbg(DBG_PRINT, "(GRADING1A 2.a)\n");
 
         strncpy(p->p_comm, name, PROC_NAME_LEN);
+        p->p_comm[PROC_NAME_LEN-1] = '\0';
 
         list_init(&p->p_threads);
         list_init(&p->p_children);
+        list_link_init(&p->p_list_link);
+        list_link_init(&p->p_child_link);
 
-        p->p_pproc = curproc;
-        if (p->p_pid == PID_INIT){
-                proc_initproc = p;
-                dbg(DBG_PRINT, "(GRADING1A 2)\n");
-        }
+        // p->p_pproc = curproc;
+
 
         p->p_status = 0;
         p->p_state = PROC_RUNNING;
@@ -246,9 +246,20 @@ proc_create(char *name)
         sched_queue_init(&p->p_wait);
         p->p_pagedir = pt_create_pagedir();
 
-        list_link_init(&p->p_list_link);
-        list_link_init(&p->p_child_link);
+        // list_link_init(&p->p_list_link);
+        // list_link_init(&p->p_child_link);
 
+        if (p->p_pid == PID_IDLE){
+            p->p_pproc = NULL;
+        }
+        else{
+            p->p_pproc = curproc;
+        }
+
+        if (p->p_pid == PID_INIT){
+                proc_initproc = p;
+                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+        }
         if (curproc!= NULL){
                 list_insert_tail(&curproc->p_children, &p->p_child_link);
                 dbg(DBG_PRINT, "(GRADING1A 2)\n");
@@ -298,12 +309,18 @@ proc_cleanup(int status)
         dbg(DBG_PRINT, "(GRADING1A 2.a)\n");
 
         // schedule wake up on current queue waiting
-        sched_wakeup_on(&curproc->p_pproc->p_wait);
-
+        if (curproc->p_pproc->p_wait.tq_size>0){
+            sched_wakeup_on(&curproc->p_pproc->p_wait);
+   
+        }
+        
         proc_t* temp_p;
         list_iterate_begin(&curproc->p_children, temp_p, proc_t, p_child_link){
-                list_insert_tail(&(proc_initproc->p_children), &temp_p->p_child_link);
+                
+                list_insert_tail(&proc_initproc->p_children, &temp_p->p_child_link);
+                
                 temp_p->p_pproc = proc_initproc;
+
                 dbg(DBG_PRINT, "(GRADING1A 2)\n");
         } list_iterate_end();
         
@@ -359,7 +376,8 @@ proc_kill_all()
         proc_t *p;
         list_iterate_begin(&_proc_list, p, proc_t, p_list_link){
                 if (p->p_pproc != NULL && p->p_pproc->p_pid != PID_IDLE && 
-                        p->p_pid != PID_IDLE && p != curproc){
+                        p->p_pid != PID_IDLE  && p != curproc){
+                                // p != curproc
                                 proc_kill(p,0);
                                 dbg(DBG_PRINT, "(GRADING1A)\n");
                 }
@@ -367,9 +385,9 @@ proc_kill_all()
         } list_iterate_end();
         dbg(DBG_PRINT, "(GRADING1A)\n");
 
-        if (curproc->p_pproc != NULL && curproc->p_pproc->p_pid != PID_IDLE){
-                proc_kill(curproc, 0);
-        }
+        // if (curproc->p_pproc != NULL && curproc->p_pproc->p_pid != PID_IDLE){
+        //         proc_kill(curproc, 0);
+        // }
         dbg(DBG_PRINT, "(GRADING1A)\n");
         // NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
 }
@@ -419,9 +437,10 @@ do_waitpid(pid_t pid, int options, int *status)
         }
         
         if (pid == -1){
+                proc_t *p;
+                // pid_t pid;
                 while (1){
-                        proc_t *p;
-                        pid_t pid;
+                        
                         list_iterate_begin(&curproc->p_children, p, proc_t, p_child_link){
                                 if (p->p_state == PROC_DEAD){
                                         /* must have found a dead child process */
@@ -437,16 +456,16 @@ do_waitpid(pid_t pid, int options, int *status)
                                         dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
 
                                         *status = p->p_status;
-                                        pid = p->p_pid;
+                                        pid_t pid = p->p_pid;
 
-                                        if (list_link_is_linked(&p->p_list_link)){
+                                        // if (list_link_is_linked(&p->p_list_link)){
                                                 list_remove(&p->p_list_link);
                                                 dbg(DBG_PRINT, "(GRADING1A 2)\n");
-                                        }
-                                        if (list_link_is_linked(&p->p_child_link)){
+                                        // }
+                                        // if (list_link_is_linked(&p->p_child_link)){
                                                 list_remove(&p->p_child_link);
                                                 dbg(DBG_PRINT, "(GRADING1A 2)\n");
-                                        }       
+                                        // }       
 
                                         kthread_t *kthr = list_head(&p->p_threads, kthread_t, kt_plink);
                                         kthread_destroy(kthr);
@@ -456,16 +475,20 @@ do_waitpid(pid_t pid, int options, int *status)
                                         dbg(DBG_PRINT, "(GRADING1A 2)\n");
                                         return pid;
                                 }
-                                dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                                // dbg(DBG_PRINT, "(GRADING1A 2)\n");
                         } list_iterate_end();
+                        sched_sleep_on(&curproc->p_wait);
                 }
         }
         else if (pid > 0){
                 proc_t *p;
-                pid_t pid;
+                // pid_t pid;
                 list_iterate_begin(&curproc->p_children, p, proc_t, p_child_link){
 
                         if (p->p_pid == pid){
+                            while(p->p_state != PROC_DEAD){
+                                sched_sleep_on(&curproc->p_wait);
+                            }
                                  /* must have found a dead child process */
                                 KASSERT(NULL != p); 
                                 dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
@@ -479,7 +502,7 @@ do_waitpid(pid_t pid, int options, int *status)
                                 dbg(DBG_PRINT, "(GRADING1A 2.c)\n");
                 
                                 *status = p->p_status;
-                                pid = p->p_pid;
+                                pid_t pid = p->p_pid;
 
                                 while(p->p_state != PROC_DEAD){
                                         sched_sleep_on(&curproc->p_wait);
@@ -503,7 +526,7 @@ do_waitpid(pid_t pid, int options, int *status)
                                 dbg(DBG_PRINT, "(GRADING1A 2)\n");
                                 return pid;
                         }
-                        dbg(DBG_PRINT, "(GRADING1A 2)\n");
+                        // dbg(DBG_PRINT, "(GRADING1A 2)\n");
 
                 } list_iterate_end();
         }

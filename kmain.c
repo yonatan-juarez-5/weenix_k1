@@ -72,6 +72,17 @@ kthread_t *initproc_create(void);
 void      *initproc_run(int arg1, void *arg2);
 void      *final_shutdown(void);
 
+
+// external fucntions
+extern void *faber_thread_test(int, void*);
+extern void *sunghan_test(int, void *);
+extern void *sunghan_deadlock_test(int, void *);
+
+// functions to run faber, sunghan, sunghan deadlock tests
+static void *run_faber_thread_test(kshell_t *kshell, int argc, char **argv);
+static void *run_sunghan_test(kshell_t *kshell, int argc, char **argv);
+static void *run_sunghan_deadlock_test(kshell_t *kshell, int argc, char **argv);
+
 /**
  * This function is called from kmain, however it is not running in a
  * thread context yet. It should create the idle process which will
@@ -101,7 +112,7 @@ bootstrap(int arg1, void *arg2)
         KASSERT(PID_IDLE == curproc->p_pid);
         dbg(DBG_PRINT, "(GRADING1A 1.a)\n");
 
-        curthr = kthread_create(curproc, idleproc_run, NULL, NULL);
+        curthr = kthread_create(curproc, idleproc_run, 0, NULL);
         KASSERT(NULL != curthr);
         dbg(DBG_PRINT, "(GRADING1A 1.a)\n");
         
@@ -180,11 +191,11 @@ initproc_create(void)
 
         KASSERT(NULL != p);
         dbg(DBG_PRINT, "(GRADING1A 1.b)\n");
+
         KASSERT(PID_INIT == p->p_pid);
         dbg(DBG_PRINT, "(GRADING1A 1.b)\n");
         
         kthread_t *kthr = kthread_create(p, initproc_run, NULL, NULL);
-
         KASSERT(NULL != kthr);
         dbg(DBG_PRINT, "(GRADING1A 1.b)\n");
 
@@ -207,6 +218,70 @@ void *
 initproc_run(int arg1, void *arg2)
 {
         // NOT_YET_IMPLEMENTED("PROCS: initproc_run");
+        faber_thread_test(0, NULL);
 
-        // return NULL;
+        #ifdef __DRIVERS__
+            dbg(DBG_PRINT, "(GRADING1B)\n");
+            kshell_add_command("sunghan", (kshell_cmd_func_t)&run_sunghan_test, "run sunghan");
+
+            dbg(DBG_PRINT, "(GRADING1B)\n");
+            kshell_add_command("deadlock", (kshell_cmd_func_t)&run_sunghan_deadlock_test, "run sunghan deadlock");
+
+            dbg(DBG_PRINT, "(GRADING1B)\n");
+            kshell_add_command("faber", (kshell_cmd_func_t)&run_faber_thread_test, "run faber");
+
+            kshell_t *kshell = kshell_create(0);
+            if (NULL == kshell){
+                dbg(DBG_PRINT, "(GRADING1B)\n");
+                panic("init: Couldn't create kernel shell\n");
+            }
+            while(kshell_execute_next(kshell)){
+                kshell_destroy(kshell);
+            }
+        #endif /* __DRIVERS__ */
+
+        return NULL;
 }
+
+#ifdef __DRIVERS__
+static void* run_faber_thread_test(kshell_t *kshell, int argc, char **argv){
+        KASSERT(kshell != NULL);
+        dbg(DBG_PRINT, "(GRADING1C)\n");
+
+        proc_t *p = proc_create("faber");
+        kthread_t *kthr = kthread_create(p, faber_thread_test, 0, NULL);
+        int status = 0;
+        sched_make_runnable(kthr);
+        do_waitpid(p->p_pid, 0, &status);
+
+        dbg(DBG_PRINT, "(GRADING1C)\n");
+        return 0;
+}
+
+static void* run_sunghan_test(kshell_t *kshell, int argc, char **argv){
+        KASSERT(kshell != NULL);
+        dbg(DBG_PRINT, "(GRADING1D 1)\n");
+        proc_t *p = proc_create("sunghan");
+        kthread_t *kthr = kthread_create(p, sunghan_test, 0, NULL);
+        int status = 0;
+        sched_make_runnable(kthr);
+        do_waitpid(p->p_pid, 0, &status);
+
+        dbg(DBG_PRINT, "(GRADING1D 1)\n");
+        return 0;
+}
+
+static void* run_sunghan_deadlock_test(kshell_t *kshell, int argc, char **argv){
+        KASSERT(kshell != NULL);
+        dbg(DBG_PRINT, "(GRADING1D 2)\n");
+        proc_t *p = proc_create("deadlock");
+        kthread_t *kthr = kthread_create(p, sunghan_deadlock_test, 0, NULL);
+        int status = 0;
+        sched_make_runnable(kthr);
+        do_waitpid(p->p_pid, 0, &status);
+
+        dbg(DBG_PRINT, "(GRADING1D 2)\n");
+        return 0;
+}
+
+#endif

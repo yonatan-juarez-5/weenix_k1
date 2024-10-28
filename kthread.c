@@ -107,7 +107,9 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
         KASSERT(NULL != p);
         dbg(DBG_PRINT, "(GRADING1A 3.a)\n");
 
-        kthread_t *kthr = (kthread_t*)slab_obj_alloc(kthread_allocator);
+        kthread_t *kthr;
+        kthr = (kthread_t*)slab_obj_alloc(kthread_allocator);
+        
         kthr->kt_kstack = alloc_stack();
         kthr->kt_retval = (void*)0;
         kthr->kt_errno = 0;
@@ -189,8 +191,12 @@ kthread_exit(void *retval)
 {
         /* curthr should not be (sleeping) in any queue */
         KASSERT(!curthr->kt_wchan); 
+        dbg(DBG_PRINT, "(GRADING1A 3.c)\n");
+
         /* this thread must not be part of any list */
         KASSERT(!curthr->kt_qlink.l_next && !curthr->kt_qlink.l_prev); 
+        dbg(DBG_PRINT, "(GRADING1A 3.c)\n");
+
         /* this thread belongs to curproc */
         KASSERT(curthr->kt_proc == curproc); 
         dbg(DBG_PRINT, "(GRADING1A 3.c)\n");

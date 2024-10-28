@@ -118,23 +118,43 @@ sched_queue_empty(ktqueue_t *q)
 int
 sched_cancellable_sleep_on(ktqueue_t *q)
 {
-        if (curthr->kt_cancelled == 1){
+        if(!curthr->kt_cancelled){
+                curthr->kt_state = KT_SLEEP_CANCELLABLE;
+                ktqueue_enqueue(q, curthr);
+                dbg(DBG_PRINT, "(GRADING1A 5)\n");
+                sched_switch();
+
+                if (curthr->kt_cancelled == 1){
+                        dbg(DBG_PRINT, "(GRADING1A 5)\n");
+                        return -EINTR; /* Interrupted system call */
+                }
+                else{
+                        dbg(DBG_PRINT, "(GRADING1A 5)\n");
+                        return 0;
+                // NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");   
+                } 
+        }
+        if (curthr->kt_cancelled){
                 dbg(DBG_PRINT, "(GRADING1A 5)\n");
                 return -EINTR; /* Interrupted system call */
         }
-        curthr->kt_state = KT_SLEEP_CANCELLABLE;
-        ktqueue_enqueue(q, curthr);
-        dbg(DBG_PRINT, "(GRADING1A 5)\n");
-
-        sched_switch();
-        if (curthr->kt_cancelled == 1){
-                dbg(DBG_PRINT, "(GRADING1A 5)\n");
-                return -EINTR; /* Interrupted system call */
-        }
-        dbg(DBG_PRINT, "(GRADING1A 5)\n");
-
-        // NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
+        
         return 0;
+
+        // curthr->kt_state = KT_SLEEP_CANCELLABLE;
+        // ktqueue_enqueue(q, curthr);
+        // dbg(DBG_PRINT, "(GRADING1A 5)\n");
+
+        // sched_switch();
+        // if (curthr->kt_cancelled == 1){
+        //         dbg(DBG_PRINT, "(GRADING1A 5)\n");
+        //         return -EINTR; /* Interrupted system call */
+        // }
+        // dbg(DBG_PRINT, "(GRADING1A 5)\n");
+
+        // // NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
+        // return 0;
+        
 }
 
 /*
@@ -153,12 +173,15 @@ sched_cancel(struct kthread *kthr)
                         kthr->kt_cancelled =  1;
                         ktqueue_remove(kthr->kt_wchan, kthr);
                         dbg(DBG_PRINT, "(GRADING1A 5)\n");
+                        sched_make_runnable(kthr);
                 }
                 else{
                         kthr->kt_cancelled = 1;
                         dbg(DBG_PRINT, "(GRADING1A 5)\n");
                 }
+                dbg(DBG_PRINT, "(GRADING1A 5)\n");
         }
+        dbg(DBG_PRINT, "(GRADING1A 5)\n");
         // NOT_YET_IMPLEMENTED("PROCS: sched_cancel");
 }
 
@@ -202,27 +225,36 @@ void
 sched_switch(void)
 {
         uint8_t curIPL = intr_getipl();
-        int isQEmpty = 0;
-        do{
-                dbg(DBG_PRINT, "(GRADING1A 5)\n");
-                intr_setipl(IPL_HIGH);
-                isQEmpty = sched_queue_empty(&kt_runq);
-                intr_setipl(IPL_LOW);
-                if (isQEmpty){
-                       intr_wait();
-                       dbg(DBG_PRINT, "(GRADING1A 5)\n");
-                }
-                dbg(DBG_PRINT, "(GRADING1A 5)\n");
+         kthread_t *kthr;
+        // int isQEmpty = 0;
+        // do{
+        //         dbg(DBG_PRINT, "(GRADING1A 5)\n");
+        //         intr_setipl(IPL_HIGH);
+        //         isQEmpty = sched_queue_empty(&kt_runq);
+        //         intr_setipl(IPL_LOW);
+        //         if (isQEmpty){
+        //                intr_wait();
+        //                dbg(DBG_PRINT, "(GRADING1A 5)\n");
+        //         }
+        //         dbg(DBG_PRINT, "(GRADING1A 5)\n");
 
-        }while(isQEmpty);
+        // }while(isQEmpty);
         
+        while(sched_queue_empty(&kt_runq)){
+                intr_setipl(IPL_HIGH);
+                intr_setipl(IPL_LOW);
+                intr_wait();
+        }
         intr_setipl(IPL_HIGH);
-        kthread_t *kthr = ktqueue_dequeue(&kt_runq);
+
+        kthr = ktqueue_dequeue(&kt_runq);
         context_t *currCtx = &curthr->kt_ctx;
-        context_t *newCtx = &kthr->kt_ctx;
+
+        // context_t *newCtx = &kthr->kt_ctx;
         curthr = kthr;
-        curproc = kthr->kt_proc;
-        context_switch(currCtx, newCtx);
+        curproc = curthr->kt_proc;
+        context_switch(currCtx, &curthr->kt_ctx);
+        // context_switch(currCtx, newCtx);
         intr_setipl(curIPL);
         dbg(DBG_PRINT, "(GRADING1A 5)\n");
 
@@ -252,12 +284,11 @@ sched_make_runnable(kthread_t *thr)
 
         uint8_t currIpl = intr_getipl();
         intr_setipl(IPL_HIGH);
+
         thr->kt_state = KT_RUN;
         ktqueue_enqueue(&kt_runq, thr);
-
         intr_setipl(currIpl);
         dbg(DBG_PRINT, "(GRADING1A 5)\n");
-
 
         // NOT_YET_IMPLEMENTED("PROCS: sched_make_runnable");
 }

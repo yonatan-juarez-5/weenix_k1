@@ -236,8 +236,9 @@ initproc_run(int arg1, void *arg2)
                 panic("init: Couldn't create kernel shell\n");
             }
             while(kshell_execute_next(kshell)){
-                kshell_destroy(kshell);
+                
             }
+            kshell_destroy(kshell);
         #endif /* __DRIVERS__ */
 
         return NULL;

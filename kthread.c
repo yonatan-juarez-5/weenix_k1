@@ -158,9 +158,8 @@ kthread_cancel(kthread_t *kthr, void *retval)
 
         // kthr->kt_cancelled = 1;
         if (curthr == kthr){
-                
-                kthread_exit(retval);
                 dbg(DBG_PRINT, "(GRADING1A 3)\n");
+                kthread_exit(retval);
         }
         else{
                 kthr->kt_cancelled = 1;
@@ -168,6 +167,7 @@ kthread_cancel(kthread_t *kthr, void *retval)
                 sched_cancel(kthr);
                 dbg(DBG_PRINT, "(GRADING1A 3)\n");
         }
+        dbg(DBG_PRINT, "(GRADING1A 3)\n");
         // NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");
 }
 

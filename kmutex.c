@@ -88,16 +88,17 @@ kmutex_lock_cancellable(kmutex_t *mtx)
 				kmutex_unlock(mtx);
 				dbg(DBG_PRINT, "(GRADING1A 6)\n");
 			}
+			// int status = sched_cancellable_sleep_on(&mtx->km_waitq); //return status 
+			// return status;
 			dbg(DBG_PRINT, "(GRADING1A 6)\n");
-			
-			int status = sched_cancellable_sleep_on(&mtx->km_waitq); //return status 
-			return status;
+			return sched_cancellable_sleep_on(&mtx->km_waitq);
 			
 		}else{
 			mtx->km_holder = curthr;
 			dbg(DBG_PRINT, "(GRADING1A 6)\n");
 			return 0;
 		}
+		dbg(DBG_PRINT, "(GRADING1A 6)\n");
 		// NOT_YET_IMPLEMENTED("PROCS: kmutex_lock_cancellable");
         // return 0;//
 }

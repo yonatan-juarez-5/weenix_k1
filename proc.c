@@ -387,8 +387,8 @@ proc_kill(proc_t *p, int status)
                         dbg(DBG_PRINT, "(GRADING1A)\n");
                 } list_iterate_end();
                 dbg(DBG_PRINT, "(GRADING1A)\n");
-
         }
+        dbg(DBG_PRINT, "(GRADING1A)\n");
         // NOT_YET_IMPLEMENTED("PROCS: proc_kill");
 }
 
@@ -433,8 +433,8 @@ proc_thread_exited(void *retval)
 {
         // cleanup process
         proc_cleanup((int)retval);
-        dbg(DBG_PRINT, "(GRADING1A)\n");
         sched_switch();
+        dbg(DBG_PRINT, "(GRADING1A)\n");
         // NOT_YET_IMPLEMENTED("PROCS: proc_thread_exited");
 }
 
@@ -467,11 +467,11 @@ do_waitpid(pid_t pid, int options, int *status)
         if (pid == -1){
                 // pid_t pid;
                 while (1){
-                        
                         list_iterate_begin(&curproc->p_children, p, proc_t, p_child_link){
                                 if (p->p_state == PROC_DEAD){
                                         if (status != NULL){
                                             *status = p->p_status;
+                                            dbg(DBG_PRINT, "(GRADING1A 2)\n");
                                         }
                                         pid_t pid = p->p_pid;
                                         kthr = list_head(&p->p_threads, kthread_t, kt_plink);
@@ -506,9 +506,11 @@ do_waitpid(pid_t pid, int options, int *status)
                                         dbg(DBG_PRINT, "(GRADING1A 2)\n");
                                         return pid;
                                 }
+                                dbg(DBG_PRINT, "(GRADING1A 2)\n");
                                 // dbg(DBG_PRINT, "(GRADING1A 2)\n");
                         } list_iterate_end();
                         sched_sleep_on(&curproc->p_wait);
+                        dbg(DBG_PRINT, "(GRADING1A 2)\n");
                 }
         }
         else if (pid > 0){
@@ -519,6 +521,7 @@ do_waitpid(pid_t pid, int options, int *status)
                         if (p->p_pid == pid){
                                 while(p->p_state != PROC_DEAD){
                                     sched_sleep_on(&curproc->p_wait);
+                                    dbg(DBG_PRINT, "(GRADING1A 2)\n");
                                 }
                                  /* must have found a dead child process */
                                 KASSERT(NULL != p); 
@@ -559,9 +562,11 @@ do_waitpid(pid_t pid, int options, int *status)
                                 dbg(DBG_PRINT, "(GRADING1A 2)\n");
                                 return pid;
                         }
+                        dbg(DBG_PRINT, "(GRADING1A 2)\n");
                         // dbg(DBG_PRINT, "(GRADING1A 2)\n");
 
                 } list_iterate_end();
+                dbg(DBG_PRINT, "(GRADING1A 2)\n");
         }
         // NOT_YET_IMPLEMENTED("PROCS: do_waitpid");
         dbg(DBG_PRINT, "(GRADING1A 2)\n");
@@ -579,5 +584,6 @@ do_exit(int status)
 {       
         dbg(DBG_PRINT, "(GRADING1A 2)\n");
         kthread_exit((void *)status);
+        // dbg(DBG_PRINT, "(GRADING1A 2)\n");
         // NOT_YET_IMPLEMENTED("PROCS: do_exit");
 }

@@ -218,7 +218,7 @@ void *
 initproc_run(int arg1, void *arg2)
 {
         // NOT_YET_IMPLEMENTED("PROCS: initproc_run");
-        faber_thread_test(0, NULL);
+        // faber_thread_test(0, NULL);
 
         #ifdef __DRIVERS__
             dbg(DBG_PRINT, "(GRADING1B)\n");

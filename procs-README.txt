@@ -43,9 +43,9 @@ with a numeric value:
     (c) In kmutex_unlock(): 1 out of 2 pts
 
 (B) Kshell : ? out of 20 pts
-    What is your kshell command to invoke faber_thread_test(): (Comments?)
-    What is your kshell command to invoke sunghan_test(): (Comments?)
-    What is your kshell command to invoke sunghan_deadlock_test(): (Comments?)
+    What is your kshell command to invoke faber_thread_test(): faber
+    What is your kshell command to invoke sunghan_test(): sunghan
+    What is your kshell command to invoke sunghan_deadlock_test(): deadlock
 
 (C.1) waitpid any test, etc. (4 out of 4 pts)
 (C.2) Context switch test (1 out of 1 pt)
@@ -62,30 +62,30 @@ with a numeric value:
 
 (E) Additional self-checks: (10 out of 10 pts)
     Please provide details, add subsections and/or items as needed; or, say that "none is needed".
-    Details: (Comments?)
+    Details: none
 
 Missing/incomplete required section(s) in README file (procs-README.txt): (0 pts)
 Submitted binary file : (0 pts)
 Submitted extra (unmodified) file : (0 pts)
 Wrong file location in submission : (0 pts)
-Extra printout when running with DBG=error,test in Config.mk : (-? pts)
-Incorrectly formatted or mis-labeled "conforming dbg() calls" : (-? pts)
-Cannot compile : (-? pts)
-Compiler warnings : (-? pts)
-"make clean" : (-? pts)
-Kernel panic : (-? pts)
-Kernel freezes : (-? pts)
-Cannot halt kernel cleanly : (-? pts)
+Extra printout when running with DBG=error,test in Config.mk : (0 pts)
+Incorrectly formatted or mis-labeled "conforming dbg() calls" : (0 pts)
+Cannot compile : (0 pts)
+Compiler warnings : (0 pts)
+"make clean" : (0 pts)
+Kernel panic : (0 pts)
+Kernel freezes : (0 pts)
+Cannot halt kernel cleanly : (0 pts)
 
 +--------------------------------------+
 | CONTRIBUTION FROM MEMBERS (Required) |
 +--------------------------------------+
 
-1)  Names and USC e-mail addresses of team members: ?
+1)  Names and USC e-mail addresses of team members: N/A
 2)  Is the following statement correct about your submission (please replace
         "(Comments?)" with either "yes" or "no", and if the answer is "no",
         please list percentages for each team member)?  "Each team member
-        contributed equally in this assignment": (Comments?)
+        contributed equally in this assignment": N/A
 
 +---------------------------------+
 | BUGS / TESTS TO SKIP (Required) |

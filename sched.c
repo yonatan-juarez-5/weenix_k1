@@ -134,7 +134,7 @@ sched_cancellable_sleep_on(ktqueue_t *q)
                 // NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");   
                 } 
         }
-        if (curthr->kt_cancelled){
+        if(curthr->kt_cancelled){
                 dbg(DBG_PRINT, "(GRADING1A 5)\n");
                 return -EINTR; /* Interrupted system call */
         }
